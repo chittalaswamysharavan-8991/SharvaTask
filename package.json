@@ -1,0 +1,30 @@
+{
+  "name": "sharvatask-mcp-vercel-v2",
+  "version": "2.4.0",
+  "private": true,
+  "description": "SharvaTask MCP V2.3 for Vercel: persistent list/task history with compact mobile-first ChatGPT widget with editable tasks and human history.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vercel/blob": "latest",
+    "mcp-handler": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest",
+    "@modelcontextprotocol/sdk": "1.26.0"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
