@@ -1,0 +1,39 @@
+{
+  "manifest_version": "1.0",
+  "script_version": "phase-b-readonly-export-v1.0.1",
+  "export_status": "OK",
+  "reason": "Read-only export completed.",
+  "started_at": "2026-07-06T19:59:19.830Z",
+  "finished_at": "2026-07-06T19:59:23.108Z",
+  "prefix": "sharvatask-v2/events",
+  "allowed_prefix": "sharvatask-v2/events",
+  "export_file": "backups\\phase-b\\blob-events-export-2026-07-06T19-59-19-830Z.json",
+  "manifest_file": "backups\\phase-b\\blob-events-export-2026-07-06T19-59-19-830Z.manifest.json",
+  "report_file": "reports\\PHASE_B_BLOB_INVENTORY_REPORT.md",
+  "blob_count": 34,
+  "event_count": 34,
+  "event_type_counts": {
+    "list_created": 11,
+    "task_added": 22,
+    "task_status_updated": 1
+  },
+  "export_sha256": "e0c5465729701789fd846ac066777db7369a9bdd6ccf7d1c63170bc6acf27839",
+  "read_only_guarantee": {
+    "blob_writes_attempted": false,
+    "production_mutations_attempted": false,
+    "active_pointer_writes_attempted": false,
+    "deploy_attempted": false,
+    "imported_write_functions_by_name": false
+  },
+  "secret_handling": {
+    "token_env_present": true,
+    "secret_values_stored": false,
+    "note": "No secret value is written to this manifest, export, or report."
+  },
+  "operations_used": [
+    "@vercel/blob list",
+    "@vercel/blob get"
+  ],
+  "forbidden_operations_used": [],
+  "manifest_sha256": "5451765259a0f0eb9da756ee0cf53c97bb8db84fde9c555963f775326f949869"
+}

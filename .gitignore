@@ -7,3 +7,10 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.vercel
+.env*
+
+backups/phase-b/blob-events-export-*.json
+
+!backups/phase-b/blob-events-export-*.manifest.json
