@@ -7,7 +7,7 @@ export default function HomePage() {
         <li>Health: <code>/api/health</code></li>
         <li>MCP: <code>/api/mcp</code></li>
         <li>MCP alias: <code>/mcp</code></li>
-        <li>Widget resource: <code>ui://widget/sharvatask.html</code></li>
+        <li>Widget resource: <code>ui://widget/sharvatask-v2-4-clickdiag.html</code></li>
       </ul>
       <p>Connector URL: <code>https://your-project.vercel.app/api/mcp</code></p>
     </main>
