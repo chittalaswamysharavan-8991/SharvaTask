@@ -17,9 +17,9 @@ import {
   searchSharvaListsData,
   showHistoryData,
   showSharvaListData,
-  updateSharvaTaskData,
   updateSharvaTaskStatusData
 } from '../../../src/domain/sharvaTaskService';
+import { editTaskDetailsData } from '../../../src/domain/taskDetailsService';
 import { SHARVATASK_WIDGET_URI, sharvaTaskWidgetHtml } from '../../../src/widget/sharvaTaskWidget';
 import type { SharvaTaskWidgetOutput } from '../../../src/types';
 
@@ -46,6 +46,8 @@ const taskItemSchema = z.object({
   item_id: z.string(),
   title: z.string(),
   notes: z.string().optional(),
+  next_action: z.string().optional(),
+  pablo_instruction: z.string().optional(),
   status: taskStatus,
   priority,
   proof: z.array(z.string()),
@@ -304,21 +306,45 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
+      'edit_task_details',
+      {
+        title: 'Edit SharvaTask task details',
+        description: 'Updates editable task details such as title, notes, next action, Pablo instruction, priority, or status and returns structured data for the existing board shell. Does not render, open, mount, or re-render a widget. Prefer stable task IDs. If title/query is ambiguous, returns structured candidates instead of guessing.',
+        inputSchema: {
+          list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
+          item_id_or_title: z.string().min(1).describe('Required task ID or task title search text. Stable task ID is preferred.'),
+          title: z.string().optional().describe('New task title. Empty title is rejected.'),
+          notes: z.string().optional().describe('Task notes. Empty string clears notes.'),
+          next_action: z.string().optional().describe('Next action. Empty string clears next action.'),
+          pablo_instruction: z.string().optional().describe('Instruction/context for Pablo. Empty string clears it.'),
+          priority: priority.optional().describe('Priority: P0, P1, P2, or P3'),
+          status: taskStatus.optional().describe('Optional task status update')
+        },
+        outputSchema: structuredOutputShape,
+        _meta: mutationDataToolMeta
+      },
+      async (args) => widgetResult(await editTaskDetailsData(args))
+    );
+
+    server.registerTool(
       'update_task',
       {
         title: 'Edit SharvaTask task (internal)',
-        description: 'Internal/app-only compatibility edit action for the mounted SharvaTask board shell. Edits task fields by stable task ID when possible and returns structured state. Does not render, open, mount, or re-render a widget.',
+        description: 'Internal/app-only compatibility edit action for the mounted SharvaTask board shell. Routes to the same backend path as edit_task_details and returns structured state. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
           item_id_or_title: z.string().min(1).describe('Task ID or task title search text'),
           title: z.string().optional().describe('New task title'),
           notes: z.string().optional().describe('New task notes'),
-          priority: priority.optional().describe('Priority: P0, P1, P2, or P3')
+          next_action: z.string().optional().describe('Next action'),
+          pablo_instruction: z.string().optional().describe('Instruction/context for Pablo'),
+          priority: priority.optional().describe('Priority: P0, P1, P2, or P3'),
+          status: taskStatus.optional().describe('Optional task status update')
         },
         outputSchema: structuredOutputShape,
         _meta: internalDataToolMeta
       },
-      async (args) => widgetResult(await updateSharvaTaskData(args))
+      async (args) => widgetResult(await editTaskDetailsData(args))
     );
 
     server.registerTool(
@@ -525,7 +551,7 @@ const handler = createMcpHandler(
   {
     serverInfo: {
       name: 'SharvaTask MCP',
-      version: '2.5.0-phase-c-descriptor-tool-surface'
+      version: '2.6.0-phase-f-edit-task-details'
     }
   },
   { basePath: '/api' }
