@@ -40,6 +40,8 @@ export interface SharvaTaskItem {
   item_id: string;
   title: string;
   notes?: string;
+  next_action?: string;
+  pablo_instruction?: string;
   status: TaskStatus;
   priority: Priority;
   proof: string[];
