@@ -1,0 +1,74 @@
+name: Phase F CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm ci
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd ci
+
+      - name: Verify descriptor (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm run verify:descriptor
+
+      - name: Verify descriptor (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd run verify:descriptor
+
+      - name: Verify Phase F (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm run verify:phase-f
+
+      - name: Verify Phase F (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd run verify:phase-f
+
+      - name: Typecheck (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm run typecheck
+
+      - name: Typecheck (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd run typecheck
+
+      - name: Build (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm run build
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd run build
+
+      - name: Focused tests (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm test
+
+      - name: Focused tests (Windows)
+        if: runner.os == 'Windows'
+        run: npm.cmd test
