@@ -2,10 +2,17 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
+import ts from 'typescript';
 
 const html = readFileSync(new URL('../src/widget/sharvaTaskWidget.html', import.meta.url), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script, 'widget script must be embedded in the HTML');
+
+const materializeSource = readFileSync(new URL('../src/domain/materialize.ts', import.meta.url), 'utf8');
+const materializeJavaScript = ts.transpileModule(materializeSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
+}).outputText;
+const { materializeLists, serializeListForBoard } = await import(`data:text/javascript;base64,${Buffer.from(materializeJavaScript).toString('base64')}`);
 
 const originalTask = {
   item_id: 'task-1',
@@ -19,13 +26,15 @@ const originalTask = {
   proof: []
 };
 
-function output(task = originalTask) {
+function output(task = originalTask, stateVersion = 2) {
   return {
     view: 'list',
     mode: 'list',
     message: 'Board ready',
     list: { list_id: 'list-1', title: 'QA list', status: 'active', items: [{ ...task }] },
-    events: []
+    events: [],
+    state_version: stateVersion,
+    state_version_after: stateVersion
   };
 }
 
@@ -61,7 +70,7 @@ function harness() {
   };
   context.globalThis = context;
   vm.createContext(context);
-  vm.runInContext(`${script}\n;globalThis.phaseF={openTaskDetail,beginTaskEdit,updateDetailDraft,saveTaskDetails,backToBoard,applySetGlobals,getState:()=>current,getDraft:()=>detailDraft,getOriginal:()=>detailOriginal,isEditing:()=>detailEditing,getSaveError:()=>detailSaveError};`, context);
+  vm.runInContext(`${script}\n;globalThis.phaseF={openTaskDetail,beginTaskEdit,updateDetailDraft,saveTaskDetails,refreshBoard,backToBoard,applySetGlobals,getState:()=>current,getDraft:()=>detailDraft,getOriginal:()=>detailOriginal,isEditing:()=>detailEditing,getSaveError:()=>detailSaveError};`, context);
   return { api: context.phaseF, calls, context, root, listeners };
 }
 
@@ -142,4 +151,54 @@ test('set_globals cannot overwrite a dirty draft', () => {
   assert.equal(h.api.getDraft().notes, 'Local draft');
   assert.equal(h.api.getState().mode, 'task_detail');
   assert.match(h.api.getState().diag_label, /preserved dirty Task Detail draft/);
+});
+
+test('saved Phase F fields survive refresh and stale set_globals before reopening Task Detail', async () => {
+  const events = [
+    { event_id: 'event-1', event_time: '2026-07-10T00:00:00.000Z', list_id: 'list-1', action: 'list_created', payload: { title: 'QA list', project: 'QA' } },
+    { event_id: 'event-2', event_time: '2026-07-10T00:01:00.000Z', list_id: 'list-1', action: 'task_added', payload: { item_id: 'task-1', title: 'Legacy task', priority: 'P1', status: 'pending' } },
+    { event_id: 'event-3', event_time: '2026-07-10T00:02:00.000Z', list_id: 'list-1', action: 'task_updated', payload: { item_id: 'task-1', task_id: 'task-1', title: 'Legacy task', notes: '', next_action: 'Persisted next action', pablo_instruction: 'Persisted Pablo instruction', priority: 'P1', status: 'pending' } }
+  ];
+  const refreshedList = serializeListForBoard(materializeLists(events)[0]);
+  const savedTask = refreshedList.items[0];
+  assert.equal(savedTask.next_action, 'Persisted next action');
+  assert.equal(savedTask.pablo_instruction, 'Persisted Pablo instruction');
+  const legacySnapshotTask = serializeListForBoard(materializeLists(events.slice(0, 2))[0]).items[0];
+  assert.equal(legacySnapshotTask.next_action, '');
+  assert.equal(legacySnapshotTask.pablo_instruction, '');
+  assert.equal(Object.hasOwn(legacySnapshotTask, 'next_action'), true);
+  assert.equal(Object.hasOwn(legacySnapshotTask, 'pablo_instruction'), true);
+
+  const h = harness();
+  h.api.openTaskDetail('list-1', 'task-1');
+  h.api.beginTaskEdit();
+  h.api.updateDetailDraft('next_action', savedTask.next_action);
+  h.api.updateDetailDraft('pablo_instruction', savedTask.pablo_instruction);
+  h.context.window.openai.callTool = async (name, args) => {
+    h.calls.push({ name, args });
+    if (name === 'edit_task_details') {
+      return { structuredContent: { ...output(savedTask, 3), list: refreshedList, task: savedTask, response_type: 'mutation_result', mode_recommendation: 'task_detail', success: true } };
+    }
+    if (name === 'refresh_board_state') {
+      return { structuredContent: { ...output(savedTask, 3), list: refreshedList, response_type: 'board_snapshot', mode_recommendation: 'board', success: true } };
+    }
+    throw new Error(`Unexpected tool: ${name}`);
+  };
+
+  assert.equal(await h.api.saveTaskDetails(), true);
+  assert.equal(await h.api.refreshBoard('list-1'), true);
+  assert.equal(h.api.getState().list.items[0].next_action, 'Persisted next action');
+  assert.equal(h.api.getState().list.items[0].pablo_instruction, 'Persisted Pablo instruction');
+
+  const staleGlobalOutput = output(originalTask, 2);
+  delete staleGlobalOutput.state_version_after;
+  h.context.window.openai.toolOutput = staleGlobalOutput;
+  h.api.applySetGlobals();
+  h.api.openTaskDetail('list-1', 'task-1');
+  assert.match(h.root.innerHTML, /Persisted next action/);
+  assert.match(h.root.innerHTML, /Persisted Pablo instruction/);
+  assert.doesNotMatch(h.root.innerHTML, /No next action set\./);
+  assert.doesNotMatch(h.root.innerHTML, /No Pablo instruction set\./);
+  assert.equal(h.calls.filter(({ name }) => name === 'edit_task_details').length, 1);
+  assert.equal(h.calls.filter(({ name }) => name === 'refresh_board_state').length, 1);
 });

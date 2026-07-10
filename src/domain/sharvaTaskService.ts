@@ -1,5 +1,5 @@
 import { createEvent, newId, readAllEvents, writeEvent } from '../storage/blobEventStore';
-import { materializeLists, summarizeList } from './materialize';
+import { materializeLists, serializeListForBoard, summarizeList } from './materialize';
 import type {
   ListSummary,
   Priority,
@@ -506,7 +506,8 @@ export async function getBoardSnapshotData(args: { list_id_or_query?: string; in
   const resolved = resolveList(lists, args.list_id_or_query, { includeArchived: args.include_archived });
   if (resolved.error_code === 'LIST_AMBIGUOUS') return withEnvelope({ view: 'lists', message: 'Multiple matching lists found.', lists: summariesForCandidates(lists, resolved.candidates) }, { events, lists, response_type: 'ambiguity', error_code: 'LIST_AMBIGUOUS', candidates: resolved.candidates, mode_recommendation: 'ambiguity_resolution' });
   if (!resolved.list) return withEnvelope({ view: 'message', message: 'No matching list found.' }, { events, lists, response_type: 'error', error_code: 'LIST_NOT_FOUND', candidates: [], mode_recommendation: 'error_recovery' });
-  return withEnvelope({ view: 'list', message: `Board snapshot ready: ${resolved.list.title}`, list: resolved.list }, { events, lists, response_type: 'board_snapshot', mode_recommendation: 'board' });
+  const snapshotList = serializeListForBoard(resolved.list);
+  return withEnvelope({ view: 'list', message: `Board snapshot ready: ${snapshotList.title}`, list: snapshotList }, { events, lists, response_type: 'board_snapshot', mode_recommendation: 'board' });
 }
 
 export async function showSharvaListData(args: { list_id_or_query?: string }): Promise<SharvaTaskWidgetOutput> {

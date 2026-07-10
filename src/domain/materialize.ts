@@ -118,6 +118,19 @@ export function summarizeList(list: SharvaTaskList): ListSummary {
   };
 }
 
+export function serializeListForBoard(list: SharvaTaskList): SharvaTaskList {
+  return {
+    ...list,
+    items: list.items.map((item) => ({
+      ...item,
+      notes: item.notes ?? '',
+      next_action: item.next_action ?? '',
+      pablo_instruction: item.pablo_instruction ?? '',
+      proof: [...item.proof]
+    }))
+  };
+}
+
 export function findList(lists: SharvaTaskList[], listIdOrQuery?: string): SharvaTaskList | undefined {
   if (!listIdOrQuery) return lists.find((list) => list.status === 'active') ?? lists[0];
 
