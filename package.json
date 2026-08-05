@@ -16,7 +16,7 @@
   "dependencies": {
     "@vercel/blob": "latest",
     "mcp-handler": "latest",
-    "next": "latest",
+    "next": "16.3.0",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest",
