@@ -1,0 +1,33 @@
+name: SharvaTask Final Release Gate
+on:
+  push:
+    branches: [qa/final-release-gate-20260806]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Dependency triage
+        run: node scripts/release-gate-audit.mjs
+      - name: Install browser QA dependency
+        run: npm install --no-save playwright@1.55.0 && npx playwright install --with-deps chromium
+      - name: Mounted widget Chromium QA
+        run: node scripts/mounted-widget-qa.mjs
+      - name: Existing verification suite
+        run: npm run verify
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-final-release-gate-${{ github.run_id }}
+          path: artifacts/release-gate/
+          retention-days: 30
