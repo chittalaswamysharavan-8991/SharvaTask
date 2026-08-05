@@ -15,18 +15,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - name: Baseline dependency triage
-        run: node scripts/release-gate-audit.mjs
-      - name: Apply non-breaking audit remediation
+      - name: Refresh lockfile for patched dependency
         run: |
-          npm audit fix --package-lock-only
+          npm install --package-lock-only
+          mkdir -p artifacts/release-gate
           cp package-lock.json artifacts/release-gate/package-lock.remediated.json
-          npm ci
-      - name: Enforce zero production advisories
+      - run: npm ci
+      - name: Dependency triage and zero-advisory enforcement
         run: |
-          npm audit --omit=dev --audit-level=low
           node scripts/release-gate-audit.mjs
+          npm audit --omit=dev --audit-level=low
       - name: Install browser QA dependency
         run: npm install --no-save playwright@1.55.0 && npx playwright install --with-deps chromium
       - name: Mounted widget Chromium QA
