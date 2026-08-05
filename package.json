@@ -20,7 +20,7 @@
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest",
-    "@modelcontextprotocol/sdk": "1.26.0"
+    "@modelcontextprotocol/sdk": "1.30.0"
   },
   "devDependencies": {
     "@types/node": "latest",
