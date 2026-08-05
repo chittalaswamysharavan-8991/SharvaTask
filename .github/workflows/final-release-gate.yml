@@ -1,0 +1,50 @@
+name: SharvaTask Final Release Gate
+on:
+  push:
+    branches: [qa/final-release-gate-20260806]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Refresh patched dependency lockfile
+        run: |
+          npm install --package-lock-only
+          npm audit fix --package-lock-only
+          mkdir -p artifacts/release-gate
+          cp package-lock.json artifacts/release-gate/package-lock.remediated.json
+      - run: npm ci
+      - name: Dependency triage and zero-advisory enforcement
+        run: |
+          node scripts/release-gate-audit.mjs
+          npm audit --omit=dev --audit-level=low
+      - name: Install browser QA dependency
+        run: npm install --no-save playwright@1.55.0 && npx playwright install --with-deps chromium
+      - name: Mounted widget Chromium QA
+        run: node scripts/mounted-widget-qa.mjs
+      - name: Existing verification suite
+        run: npm run verify
+      - name: Persist verified dependency lockfile
+        run: |
+          git config user.name "SharvaTask QA"
+          git config user.email "actions@users.noreply.github.com"
+          git add package-lock.json .npmrc
+          if ! git diff --cached --quiet; then
+            git commit -m "security: persist verified zero-advisory lockfile"
+            git push
+          fi
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-final-release-gate-${{ github.run_id }}
+          path: artifacts/release-gate/
+          retention-days: 30
