@@ -15,9 +15,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Refresh lockfile for patched dependency
+      - name: Refresh patched dependency lockfile
         run: |
           npm install --package-lock-only --legacy-peer-deps
+          npm audit fix --package-lock-only --legacy-peer-deps
           mkdir -p artifacts/release-gate
           cp package-lock.json artifacts/release-gate/package-lock.remediated.json
       - run: npm ci --legacy-peer-deps
