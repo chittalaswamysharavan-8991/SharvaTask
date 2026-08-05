@@ -8,7 +8,7 @@ permissions:
 jobs:
   gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,8 +16,17 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Dependency triage
+      - name: Baseline dependency triage
         run: node scripts/release-gate-audit.mjs
+      - name: Apply non-breaking audit remediation
+        run: |
+          npm audit fix --package-lock-only
+          cp package-lock.json artifacts/release-gate/package-lock.remediated.json
+          npm ci
+      - name: Enforce zero production advisories
+        run: |
+          npm audit --omit=dev --audit-level=low
+          node scripts/release-gate-audit.mjs
       - name: Install browser QA dependency
         run: npm install --no-save playwright@1.55.0 && npx playwright install --with-deps chromium
       - name: Mounted widget Chromium QA
