@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export const CONTROL_CENTER_COOKIE = 'sharvatask_control_center';
-const ACCESS_KEY_HASH = '2a53498f52a5bf1da10969a1a8f84c09c713462e65a5bb2727f8adaa125a030a';
+const ACCESS_KEY_HASH = '1bc3c49366c74aa8e5adff7efdf245a46cbced39051d820ed61de37cc4e59b62';
 const SESSION_VERSION = 'v1';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
