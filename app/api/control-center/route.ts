@@ -9,6 +9,10 @@ import {
 } from '../../../src/domain/sharvaTaskService';
 import { editTaskDetailsData } from '../../../src/domain/taskDetailsService';
 import { getControlCenterState } from '../../../src/domain/controlCenterService';
+import {
+  CONTROL_CENTER_COOKIE,
+  verifyControlCenterSession
+} from '../../../src/security/controlCenterAuth';
 import type { SharvaTaskWidgetOutput } from '../../../src/types';
 
 export const dynamic = 'force-dynamic';
@@ -77,12 +81,22 @@ function isSameOrigin(request: NextRequest): boolean {
   }
 }
 
+function isAuthorized(request: NextRequest): boolean {
+  try {
+    return verifyControlCenterSession(request.cookies.get(CONTROL_CENTER_COOKIE)?.value);
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) return noStore({ error: 'Control center is locked.' }, 401);
   const listId = request.nextUrl.searchParams.get('list_id') || undefined;
   return noStore(await getControlCenterState(listId));
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) return noStore({ error: 'Control center is locked.' }, 401);
   if (!isSameOrigin(request)) {
     return noStore({ error: 'Cross-origin mutation rejected.' }, 403);
   }
