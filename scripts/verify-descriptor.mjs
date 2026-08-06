@@ -49,4 +49,5 @@ assert.match(
   'widget URI must remain ui://widget/sharvatask-v2-4-clean.html'
 );
 
+assert.match(route, /sharvatask_widget_legacy[\s\S]*ui:\/\/widget\/sharvatask-v2-4-clickdiag\.html/, 'legacy cached widget URI must remain readable');
 console.log('Descriptor verification passed: one open_task_board template owner; clean user-facing widget URI active.');
