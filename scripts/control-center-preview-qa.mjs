@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const baseUrl = 'https://sharvatask-r779ucfy4-chittalaswamysharavan-7613s-projects.vercel.app/?_vercel_share=mTDjpBRZSWyP5AKMxV8GGZy1NSD5OzIX';
+const baseUrl = 'https://sharvatask-d9lep0zfc-chittalaswamysharavan-7613s-projects.vercel.app/?_vercel_share=47jpMHZiztw89v13KvKBYT7s0MRRtj1M';
 const origin = new URL(baseUrl).origin;
 const temporaryAccessKey = 'ST-TEMP-UMM73VDGVGTRPG9W';
 const knownPrivateTask = 'SharvaOS V1 — 18-Hour Completion Run';
