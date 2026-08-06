@@ -4,14 +4,14 @@ export type Priority = 'P0' | 'P1' | 'P2' | 'P3';
 export type SharvaTaskView =
   | 'list'
   | 'lists'
-  | 'search'
   | 'history'
+  | 'message'
+  | 'search'
   | 'task_detail'
   | 'proof_detail'
   | 'archive_recovery'
-  | 'ambiguity'
-  | 'error'
-  | 'message';
+  | 'ambiguity_resolution'
+  | 'error_recovery';
 
 export type SharvaTaskResponseType =
   | 'board_snapshot'
@@ -100,6 +100,21 @@ export interface ListSummary {
   total_count: number;
 }
 
+export interface SharvaTaskSearchTaskMatch {
+  list_id: string;
+  list_title: string;
+  project: string;
+  task: SharvaTaskItem;
+}
+
+export interface SharvaTaskProofDetail {
+  proof_id?: string;
+  content: string;
+  proof_type?: string;
+  event_id?: string;
+  event_time?: string;
+}
+
 export interface SharvaTaskAmbiguityCandidate {
   kind: 'list' | 'task';
   list_id?: string;
@@ -114,13 +129,6 @@ export interface SharvaTaskAmbiguityState {
   error_code: SharvaTaskErrorCode;
   message: string;
   candidates: SharvaTaskAmbiguityCandidate[];
-}
-
-export interface SharvaTaskTaskSearchResult {
-  list_id: string;
-  list_title: string;
-  project: string;
-  task: SharvaTaskItem;
 }
 
 export interface SharvaTaskWidgetOutput {
@@ -148,9 +156,8 @@ export interface SharvaTaskWidgetOutput {
   events?: SharvaTaskEvent[];
   query?: string;
   task?: SharvaTaskItem;
-  task_results?: SharvaTaskTaskSearchResult[];
+  task_matches?: SharvaTaskSearchTaskMatch[];
   focused_task_id?: string;
-  proofs?: string[];
-  selected_proof?: string;
+  focused_proof_id?: string;
+  proof?: SharvaTaskProofDetail;
 }
-
