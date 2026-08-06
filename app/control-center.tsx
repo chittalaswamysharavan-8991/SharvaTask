@@ -57,7 +57,8 @@ function formatDate(value?: string) {
     day: 'numeric',
     month: 'short',
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata'
   }).format(date);
 }
 
@@ -355,7 +356,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
             <button className="icon-button mobile-only" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Icon name="menu" /></button>
             <div>
               <h1>Control Center</h1>
-              <p>{new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}</p>
+              <p>{new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }).format(new Date(state.server_time))}</p>
             </div>
           </div>
           <div className="topbar-actions">

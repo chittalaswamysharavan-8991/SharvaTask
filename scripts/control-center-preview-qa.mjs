@@ -74,7 +74,7 @@ try {
   const pendingTask = desktopPage.locator('.task-row').filter({ has: desktopPage.locator('.status-badge.pending') }).first();
   await pendingTask.click();
   await desktopPage.getByRole('heading', { name: 'Task details' }).waitFor();
-  assert.ok(await desktopPage.getByRole('button', { name: 'Lock' }).isVisible());
+  assert.ok(await desktopPage.getByRole('button', { name: 'Lock', exact: true }).isVisible());
   await desktopPage.screenshot({ path: `${outDir}/control-center-desktop.png`, fullPage: true });
   evidence.desktop = {
     viewport: '1440x1000',
@@ -82,7 +82,7 @@ try {
     inspectorOpened: true,
     lockVisible: true
   };
-  await desktopPage.getByRole('button', { name: 'Lock' }).click();
+  await desktopPage.getByRole('button', { name: 'Lock', exact: true }).click();
   await desktopPage.getByRole('heading', { name: 'SharvaTask Control Center' }).waitFor({ timeout: 30_000 });
   await desktopContext.close();
 
