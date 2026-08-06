@@ -72,3 +72,11 @@ jobs:
       - name: Focused tests (Windows)
         if: runner.os == 'Windows'
         run: npm.cmd test
+
+      - name: Install Chromium QA dependency (Ubuntu)
+        if: runner.os == 'Linux'
+        run: npm install --no-save playwright@1.55.0 && npx playwright install --with-deps chromium
+
+      - name: Mounted clean-widget QA (Ubuntu)
+        if: runner.os == 'Linux'
+        run: node scripts/mounted-widget-qa.mjs

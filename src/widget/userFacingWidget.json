@@ -1,0 +1,23 @@
+{
+  "style": ".sync,.diag,details{display:none!important}.head{padding-bottom:12px}.event{padding:12px}.event .meta{margin-top:5px}",
+  "replacements": [
+    ["History - ", "History · "],
+    ["History mode is locked. Waiting for get_history response.", "Please wait while your activity loads."],
+    ["History response received but no events field was returned", "History is unavailable right now."],
+    ["The click/render chain ran. Reload history or refresh the board.", "Reload history or return to the board and try again."],
+    ["No business events yet.", "No activity yet."],
+    ["History mode is open, but the backend returned an empty events array.", "Changes to this list will appear here."],
+    ["Refresh click received. Calling backend…", "Refreshing…"],
+    ["History click received. Calling backend…", "Loading history…"],
+    ["setToast(`Calling ${pretty(name)}…`,'busy')", "setToast('Working…','busy')"],
+    ["App-side tool bridge is unavailable in this surface.", "This action is temporarily unavailable."],
+    ["Tool returned no structured state. Showing visible fallback.", "Something went wrong. Please try again."],
+    ["Save failed because no structured state was returned. Your draft is preserved; retry Save.", "Save failed. Your changes are still here. Please try again."],
+    ["Save failed. Draft preserved.", "Save failed. Your changes are still here."],
+    ["setToast(name==='edit_task_details'?'Save failed. Draft preserved.':`${pretty(name)} failed. See diagnostics.`, 'error')", "setToast(name==='edit_task_details'?'Save failed. Your changes are still here. Please try again.':'Something went wrong. Please try again.', 'error')"],
+    ["Editing locally. Save when ready.", "Editing. Save when ready."],
+    ["Synced from backend ✅", "Updated ✅"],
+    ["No SharvaTask data received yet.", "Open a task list to get started."],
+    ["SharvaTask state ready.", "Ready."]
+  ]
+}
