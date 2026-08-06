@@ -28,15 +28,23 @@ function attachErrorCapture(page, label) {
 }
 
 async function openProtectedPreview(page) {
-  const response = await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  const response = await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60_000 });
   assert.equal(response?.status(), 200);
   await page.getByRole('heading', { name: 'SharvaTask Control Center' }).waitFor({ timeout: 30_000 });
   await page.getByText('Enter the private access key to continue.').waitFor({ timeout: 30_000 });
+  await page.waitForLoadState('networkidle');
 }
 
 async function unlock(page) {
-  await page.locator('input[type="password"]').fill(temporaryAccessKey);
-  await page.getByRole('button', { name: 'Open control center' }).click();
+  const input = page.locator('input[type="password"]');
+  const button = page.getByRole('button', { name: 'Open control center' });
+  await input.fill(temporaryAccessKey);
+  await button.waitFor({ state: 'visible' });
+  await page.waitForFunction(() => {
+    const target = document.querySelector('button.primary-button');
+    return target instanceof HTMLButtonElement && !target.disabled;
+  });
+  await button.click();
   await page.getByRole('heading', { name: 'Control Center' }).waitFor({ timeout: 45_000 });
   await page.locator('.list-hero').waitFor({ timeout: 45_000 });
 }
