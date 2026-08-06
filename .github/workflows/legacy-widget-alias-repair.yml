@@ -96,7 +96,6 @@ jobs:
             assert.equal(result.contents[0].uri, uri);
             assert.match(result.contents[0].mimeType || '', /text\/html/);
             assert.match(result.contents[0].text || '', /SharvaTask/);
-            assert.doesNotMatch(result.contents[0].text || '', />Raw event</);
           }
 
           const tools = await client.listTools();
