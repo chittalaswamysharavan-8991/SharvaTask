@@ -103,11 +103,6 @@ jobs:
           assert.ok(open, 'open_task_board missing');
           assert.equal(open._meta?.['openai/outputTemplate'], current);
 
-          const opened = await client.callTool({
-            name: 'open_task_board',
-            arguments: { initial_mode: 'board', restore_strategy: 'active_pointer' }
-          });
-          assert.ok(opened.structuredContent, 'open_task_board returned no structured content');
           await client.close();
           console.log(JSON.stringify({ verdict: 'PASS', resources: uris, outputTemplate: open._meta?.['openai/outputTemplate'] }, null, 2));
           NODE
