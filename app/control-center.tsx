@@ -49,17 +49,37 @@ function Icon({ name }: { name: 'refresh' | 'search' | 'plus' | 'check' | 'clock
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function istParts(value?: string) {
+if (!value) return null;
+const timestamp = Date.parse(value);
+if (!Number.isFinite(timestamp)) return null;
+const shifted = new Date(timestamp + IST_OFFSET_MS);
+return {
+weekday: WEEKDAYS[shifted.getUTCDay()],
+day: shifted.getUTCDate(),
+month: MONTHS[shifted.getUTCMonth()],
+hour24: shifted.getUTCHours(),
+minute: shifted.getUTCMinutes()
+};
+}
+
 function formatDate(value?: string) {
-  if (!value) return 'Not synced';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'Asia/Kolkata'
-  }).format(date);
+const parts = istParts(value);
+if (!parts) return value || 'Not synced';
+const hour12 = parts.hour24 % 12 || 12;
+const minute = String(parts.minute).padStart(2, '0');
+const period = parts.hour24 >= 12 ? 'PM' : 'AM';
+return `${parts.day} ${parts.month}, ${hour12}:${minute} ${period}`;
+}
+
+function formatDayHeading(value?: string) {
+const parts = istParts(value);
+if (!parts) return 'Today';
+return `${parts.weekday}, ${parts.day} ${parts.month}`;
 }
 
 function statusLabel(status: TaskStatus) {
@@ -356,7 +376,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
             <button className="icon-button mobile-only" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Icon name="menu" /></button>
             <div>
               <h1>Control Center</h1>
-              <p>{new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }).format(new Date(state.server_time))}</p>
+              <p>{formatDayHeading(state.server_time)}</p>
             </div>
           </div>
           <div className="topbar-actions">
