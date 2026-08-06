@@ -1,5 +1,12 @@
 import { createEvent, newId, readAllEvents, writeEvent } from '../storage/blobEventStore';
 import { materializeLists, serializeListForBoard, summarizeList } from './materialize';
+import {
+  normalizeOpenTaskBoardIntent,
+  resolveRouteList,
+  resolveRouteTask,
+  searchRouteTargets
+} from './routeIntent';
+import type { OpenTaskBoardArgs } from './routeIntent';
 import type {
   ListSummary,
   Priority,
@@ -264,60 +271,225 @@ function summariesForCandidates(lists: SharvaTaskList[], candidates: SharvaTaskA
     .map(summarizeList);
 }
 
-export async function openTaskBoardData(args: {
-  initial_mode?: SharvaTaskModeRecommendation;
-  list_id?: string;
-  list_query?: string;
-  task_id?: string;
-  search_query?: string;
-  include_archived?: boolean;
-  restore_strategy?: string;
-}): Promise<SharvaTaskWidgetOutput> {
+export async function openTaskBoardData(args: OpenTaskBoardArgs): Promise<SharvaTaskWidgetOutput> {
   const { events, lists } = await getLists();
-  const initialMode = args.initial_mode || 'board';
+  const intent = normalizeOpenTaskBoardIntent(args);
 
-  if (initialMode === 'list_browser') return browseListsData({ status: args.include_archived ? 'all' : 'active' });
-  if (initialMode === 'search' && args.search_query) return searchBoardData({ query: args.search_query });
-
-  const query = args.list_id || args.list_query;
-  const resolved = resolveList(lists, query, { includeArchived: args.include_archived });
-
-  if (resolved.error_code === 'LIST_AMBIGUOUS') {
+  if (intent.mode === 'list_browser') {
+    const visible = lists
+      .filter((list) => (intent.include_archived ? true : list.status === 'active'))
+      .map(summarizeList);
     return withEnvelope(
-      {
-        view: 'lists',
-        message: 'Multiple matching lists found. Choose one to continue.',
-        lists: summariesForCandidates(lists, resolved.candidates)
-      },
-      {
-        events,
-        lists,
-        response_type: 'ambiguity',
-        error_code: 'LIST_AMBIGUOUS',
-        candidates: resolved.candidates,
-        mode_recommendation: 'ambiguity_resolution'
-      }
+      { view: 'lists', message: visible.length ? `Showing ${visible.length} SharvaTask list(s).` : 'No lists found.', lists: visible },
+      { events, lists, response_type: 'list_browser', mode_recommendation: 'list_browser' }
     );
   }
 
-  if (!resolved.list && lists.length === 0) {
+  if (lists.length === 0) {
     return withEnvelope(
       { view: 'message', message: 'No SharvaTask lists found yet.' },
       { events, lists, response_type: 'board_snapshot', mode_recommendation: 'empty_onboarding' }
     );
   }
 
-  if (!resolved.list) {
+  const listResolution = resolveRouteList(lists, events, intent);
+  const listAmbiguity = () => withEnvelope(
+    {
+      view: 'ambiguity' as const,
+      message: 'Multiple matching lists found. Choose one to continue.',
+      lists: summariesForCandidates(lists, listResolution.candidates)
+    },
+    {
+      events,
+      lists,
+      response_type: 'ambiguity' as const,
+      error_code: 'LIST_AMBIGUOUS' as const,
+      candidates: listResolution.candidates,
+      mode_recommendation: 'ambiguity_resolution' as const
+    }
+  );
+  const listNotFound = () => withEnvelope(
+    {
+      view: 'error' as const,
+      message: intent.restore_strategy === 'explicit_only' && !intent.has_explicit_list_target
+        ? 'Explicit-only restore requires a list ID or list query.'
+        : 'No matching list found.',
+      lists: lists.filter((list) => list.status === 'active').map(summarizeList)
+    },
+    {
+      events,
+      lists,
+      response_type: 'error' as const,
+      error_code: 'LIST_NOT_FOUND' as const,
+      candidates: [],
+      mode_recommendation: 'error_recovery' as const,
+      recovery_actions: ['browse_lists', 'open_active_pointer']
+    }
+  );
+
+  if (intent.mode === 'search') {
+    if (intent.has_explicit_list_target && listResolution.error_code === 'LIST_AMBIGUOUS') return listAmbiguity();
+    if (intent.has_explicit_list_target && !listResolution.value) return listNotFound();
+    const results = searchRouteTargets(lists, intent.search_query || '', {
+      list: intent.has_explicit_list_target ? listResolution.value : undefined,
+      includeArchived: intent.include_archived
+    });
+    const total = results.lists.length + results.tasks.length;
     return withEnvelope(
-      { view: 'lists', message: 'No matching list found. Showing available active lists.', lists: lists.filter((list) => list.status === 'active').map(summarizeList) },
-      { events, lists, response_type: 'error', error_code: 'LIST_NOT_FOUND', candidates: [], mode_recommendation: 'list_browser' }
+      {
+        view: 'search',
+        message: total
+          ? `Found ${results.tasks.length} task(s) and ${results.lists.length} list(s) for: ${intent.search_query || ''}`
+          : `No tasks or lists found for: ${intent.search_query || ''}`,
+        list: intent.has_explicit_list_target ? listResolution.value : undefined,
+        lists: results.lists.map(summarizeList),
+        task_results: results.tasks,
+        query: intent.search_query || ''
+      },
+      { events, lists, response_type: 'search_results', mode_recommendation: 'search' }
     );
   }
 
-  if (initialMode === 'history') return getHistoryData({ list_id_or_query: resolved.list.list_id });
+  if (intent.mode === 'task_detail' || intent.mode === 'proof_detail') {
+    if (!intent.task_id) {
+      return withEnvelope(
+        { view: 'error', message: `${intent.mode} requires a stable task ID.` },
+        {
+          events,
+          lists,
+          response_type: 'error',
+          error_code: 'VALIDATION_ERROR',
+          mode_recommendation: 'error_recovery',
+          recovery_actions: ['search_tasks', 'back_to_board']
+        }
+      );
+    }
+    if (intent.has_explicit_list_target && listResolution.error_code === 'LIST_AMBIGUOUS') return listAmbiguity();
+    if (intent.has_explicit_list_target && !listResolution.value) return listNotFound();
+
+    const taskResolution = resolveRouteTask(lists, intent.task_id, {
+      list: intent.has_explicit_list_target ? listResolution.value : undefined,
+      includeArchived: intent.include_archived
+    });
+    if (taskResolution.error_code === 'TASK_AMBIGUOUS') {
+      return withEnvelope(
+        {
+          view: 'ambiguity',
+          message: 'Multiple matching tasks found. Choose a task to continue.',
+          list: taskResolution.list || listResolution.value
+        },
+        {
+          events,
+          lists,
+          response_type: 'ambiguity',
+          error_code: 'TASK_AMBIGUOUS',
+          candidates: taskResolution.candidates,
+          mode_recommendation: 'ambiguity_resolution'
+        }
+      );
+    }
+    if (!taskResolution.value || !taskResolution.list) {
+      return withEnvelope(
+        {
+          view: 'error',
+          message: intent.has_explicit_list_target && listResolution.value
+            ? `No matching task found in list: ${listResolution.value.title}`
+            : 'No matching task found.' ,
+          list: listResolution.value
+        },
+        {
+          events,
+          lists,
+          response_type: 'error',
+          error_code: 'TASK_NOT_FOUND',
+          candidates: [],
+          mode_recommendation: 'error_recovery',
+          recovery_actions: ['search_tasks', 'back_to_board']
+        }
+      );
+    }
+
+    const task = taskResolution.value;
+    if (intent.mode === 'proof_detail') {
+      const proofs = Array.isArray(task.proof) ? task.proof : [];
+      const requestedIndex = intent.proof_index;
+      const selectedProof = requestedIndex !== undefined && requestedIndex < proofs.length
+        ? proofs[requestedIndex]
+        : proofs[proofs.length - 1];
+      return withEnvelope(
+        {
+          view: 'proof_detail',
+          message: `Proof detail ready: ${task.title}`,
+          list: taskResolution.list,
+          task,
+          focused_task_id: task.item_id,
+          proofs,
+          selected_proof: selectedProof
+        },
+        {
+          events,
+          lists,
+          response_type: 'proof_detail',
+          mode_recommendation: 'proof_detail',
+          affected: { list_id: taskResolution.list.list_id, task_id: task.item_id }
+        }
+      );
+    }
+
+    return withEnvelope(
+      {
+        view: 'task_detail',
+        message: `Task detail ready: ${task.title}`,
+        list: taskResolution.list,
+        task,
+        focused_task_id: task.item_id
+      },
+      {
+        events,
+        lists,
+        response_type: 'task_detail',
+        mode_recommendation: 'task_detail',
+        affected: { list_id: taskResolution.list.list_id, task_id: task.item_id }
+      }
+    );
+  }
+
+  if (listResolution.error_code === 'LIST_AMBIGUOUS') return listAmbiguity();
+  if (!listResolution.value) return listNotFound();
+  const list = listResolution.value;
+
+  if (intent.mode === 'history') {
+    const matchingEvents = events.filter((event) => event.list_id === list.list_id);
+    return withEnvelope(
+      { view: 'history', message: `Showing history for: ${list.title}`, list, events: matchingEvents },
+      { events, lists, response_type: 'history', mode_recommendation: 'history' }
+    );
+  }
+
+  if (intent.mode === 'archive_recovery') {
+    return withEnvelope(
+      {
+        view: 'archive_recovery',
+        message: list.status === 'archived'
+          ? `Archived list ready for recovery review: ${list.title}`
+          : `List is active. Archive recovery is not required: ${list.title}`,
+        list
+      },
+      {
+        events,
+        lists,
+        response_type: 'archive_recovery',
+        mode_recommendation: 'archive_recovery',
+        affected: { list_id: list.list_id, archive_status: list.status },
+        recovery_actions: list.status === 'archived'
+          ? ['browse_lists', 'review_history']
+          : ['back_to_board', 'archive_list']
+      }
+    );
+  }
 
   return withEnvelope(
-    { view: 'list', message: `Opened SharvaTask board: ${resolved.list.title}`, list: resolved.list },
+    { view: 'list', message: `Opened SharvaTask board: ${list.title}`, list },
     { events, lists, response_type: 'board_snapshot', mode_recommendation: 'board' }
   );
 }
