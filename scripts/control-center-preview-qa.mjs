@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const baseUrl = 'https://sharvatask-git-feat-7b2298-chittalaswamysharavan-7613s-projects.vercel.app';
+const baseUrl = 'https://sharvatask-akstt36rn-chittalaswamysharavan-7613s-projects.vercel.app/?_vercel_share=M7oNRgzdvMVUvEusIV5VFnkNqHpjU2LG';
+const origin = new URL(baseUrl).origin;
 const temporaryAccessKey = 'ST-TEMP-UMM73VDGVGTRPG9W';
 const knownPrivateTask = 'SharvaOS V1 — 18-Hour Completion Run';
 const outDir = 'control-center-preview-qa';
@@ -11,7 +12,7 @@ await mkdir(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const evidence = {
   verdict: 'FAIL',
-  baseUrl,
+  origin,
   checkedAt: new Date().toISOString(),
   unauthenticated: {},
   desktop: {},
@@ -26,14 +27,11 @@ function attachErrorCapture(page, label) {
   page.on('pageerror', (error) => evidence.errors.push(`${label} page: ${error.message}`));
 }
 
-async function waitForProtectedPreview(page) {
-  for (let attempt = 1; attempt <= 36; attempt += 1) {
-    const response = await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-    const body = await page.locator('body').innerText();
-    if (response?.status() === 200 && body.includes('Enter the private access key')) return;
-    await page.waitForTimeout(5_000);
-  }
-  throw new Error('Latest protected preview did not become available.');
+async function openProtectedPreview(page) {
+  const response = await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  assert.equal(response?.status(), 200);
+  await page.getByRole('heading', { name: 'SharvaTask Control Center' }).waitFor({ timeout: 30_000 });
+  await page.getByText('Enter the private access key to continue.').waitFor({ timeout: 30_000 });
 }
 
 async function unlock(page) {
@@ -47,7 +45,7 @@ try {
   const unauthContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const unauthPage = await unauthContext.newPage();
   attachErrorCapture(unauthPage, 'unauthenticated');
-  await waitForProtectedPreview(unauthPage);
+  await openProtectedPreview(unauthPage);
 
   const unauthBody = await unauthPage.locator('body').innerText();
   const source = await unauthPage.content();
@@ -55,7 +53,7 @@ try {
   assert.match(unauthBody, /Enter the private access key/);
   assert.doesNotMatch(unauthBody, new RegExp(knownPrivateTask));
   assert.doesNotMatch(source, new RegExp(knownPrivateTask));
-  const apiResponse = await unauthContext.request.get(`${baseUrl}/api/control-center`);
+  const apiResponse = await unauthContext.request.get(`${origin}/api/control-center`);
   assert.equal(apiResponse.status(), 401);
   await unauthPage.screenshot({ path: `${outDir}/locked-desktop.png`, fullPage: true });
   evidence.unauthenticated = {
@@ -68,7 +66,7 @@ try {
   const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const desktopPage = await desktopContext.newPage();
   attachErrorCapture(desktopPage, 'desktop');
-  await desktopPage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await openProtectedPreview(desktopPage);
   await unlock(desktopPage);
   await desktopPage.getByText(knownPrivateTask, { exact: true }).first().waitFor();
   const desktopOverflow = await desktopPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -91,7 +89,7 @@ try {
   const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const mobilePage = await mobileContext.newPage();
   attachErrorCapture(mobilePage, 'mobile');
-  await mobilePage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await openProtectedPreview(mobilePage);
   await unlock(mobilePage);
   const mobileOverflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert.ok(mobileOverflow <= 1, `Mobile horizontal overflow: ${mobileOverflow}`);
