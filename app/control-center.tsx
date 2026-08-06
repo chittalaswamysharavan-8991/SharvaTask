@@ -283,6 +283,15 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
     } catch {}
   }
 
+  async function lockControlCenter() {
+    setBusy(true);
+    try {
+      await fetch('/api/control-center/auth', { method: 'DELETE' });
+    } finally {
+      window.location.reload();
+    }
+  }
+
   return (
     <main className="control-shell">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -354,6 +363,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
               <Icon name="search" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this list" aria-label="Search tasks" />
             </div>
+            <button className="lock-button" onClick={lockControlCenter} disabled={busy}>Lock</button>
             <button className="icon-button" onClick={() => reload()} disabled={busy} aria-label="Refresh control center"><Icon name="refresh" /></button>
           </div>
         </header>

@@ -480,3 +480,97 @@ input:focus, select:focus, textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+.lock-button {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 0 13px;
+  font-size: 11px;
+  font-weight: 780;
+}
+.lock-button:hover { background: var(--surface-2); color: var(--text); }
+
+.gate-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(115, 87, 232, .18), transparent 38%),
+    var(--bg);
+}
+.gate-card {
+  width: min(440px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  backdrop-filter: blur(22px);
+}
+.gate-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #8e75ff, #5d43d4);
+  color: #fff;
+  font-size: 21px;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(115, 87, 232, .3);
+}
+.gate-copy h1 {
+  margin: 22px 0 8px;
+  font-size: clamp(25px, 6vw, 34px);
+  letter-spacing: -.045em;
+  line-height: 1.05;
+}
+.gate-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.gate-card form { display: grid; gap: 12px; margin-top: 24px; }
+.gate-card label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 820;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.gate-card input { min-height: 46px; color: var(--text); font-size: 14px; letter-spacing: 0; text-transform: none; }
+.gate-card .primary-button { width: 100%; min-height: 46px; }
+.gate-error {
+  margin-top: 13px;
+  border: 1px solid color-mix(in srgb, var(--red) 25%, transparent);
+  border-radius: 11px;
+  background: var(--red-soft);
+  color: var(--red);
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.gate-status {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+@media (max-width: 620px) {
+  .lock-button { min-height: 38px; padding-inline: 10px; }
+  .gate-shell { padding: 14px; }
+  .gate-card { padding: 24px 20px; border-radius: 20px; }
+}
