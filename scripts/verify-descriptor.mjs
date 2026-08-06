@@ -45,8 +45,8 @@ for (const [name, block] of [
 
 assert.match(
   widgetModule,
-  /SHARVATASK_WIDGET_URI\s*=\s*'ui:\/\/widget\/sharvatask-v2-4-clickdiag\.html'/,
-  'widget URI must remain ui://widget/sharvatask-v2-4-clickdiag.html'
+  /SHARVATASK_WIDGET_URI\s*=\s*'ui:\/\/widget\/sharvatask-v2-4-clean\.html'/,
+  'widget URI must remain ui://widget/sharvatask-v2-4-clean.html'
 );
 
-console.log('Descriptor verification passed: one open_task_board template owner; data tools are template-free.');
+console.log('Descriptor verification passed: one open_task_board template owner; clean user-facing widget URI active.');
