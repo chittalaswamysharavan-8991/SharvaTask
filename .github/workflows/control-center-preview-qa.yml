@@ -5,6 +5,7 @@ on:
     branches: [feature/web-control-center-20260806]
     paths:
       - .github/workflows/control-center-preview-qa.yml
+      - scripts/control-center-preview-qa.mjs
 
 permissions:
   contents: read
