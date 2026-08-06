@@ -235,6 +235,55 @@ const handler = createMcpHandler(
       })
     );
 
+    server.registerResource(
+      'sharvatask_widget_legacy',
+      'ui://widget/sharvatask-v2-4-clickdiag.html',
+      {
+        title: 'SharvaTask board shell',
+        description: 'Single SharvaTask board shell with internal modes for board, lists, search, history, task detail, archive, ambiguity, and recovery.',
+        mimeType: 'text/html',
+        _meta: {
+          ui: {
+            prefersBorder: true,
+            csp: {
+              connectDomains: [],
+              resourceDomains: []
+            }
+          },
+          'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+          'openai/widgetPrefersBorder': true,
+          'openai/widgetCSP': {
+            connect_domains: [],
+            resource_domains: []
+          }
+        }
+      },
+      async (uri) => ({
+        contents: [
+          {
+            uri: uri.toString(),
+            mimeType: 'text/html',
+            text: sharvaTaskWidgetHtml,
+            _meta: {
+              ui: {
+                prefersBorder: true,
+                csp: {
+                  connectDomains: [],
+                  resourceDomains: []
+                }
+              },
+              'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+              'openai/widgetPrefersBorder': true,
+              'openai/widgetCSP': {
+                connect_domains: [],
+                resource_domains: []
+              }
+            }
+          }
+        ]
+      })
+    );
+
     server.registerTool(
       'open_task_board',
       {
