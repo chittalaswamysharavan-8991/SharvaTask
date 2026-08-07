@@ -1,0 +1,31 @@
+name: SharvaTask Live Production Release E2E
+on:
+  push:
+    branches: [qa/live-release-e2e-20260807]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify production health first
+        run: curl --fail --silent --show-error https://sharvatask.vercel.app/api/health
+      - name: Run disposable production MCP E2E
+        env:
+          SHARVATASK_MCP_URL: https://sharvatask.vercel.app/api/mcp
+        run: node scripts/live-release-e2e.mjs
+      - name: Upload live evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-live-production-e2e-${{ github.run_id }}
+          path: artifacts/release-gate/live-production-e2e.json
+          retention-days: 30
