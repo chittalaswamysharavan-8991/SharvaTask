@@ -314,13 +314,13 @@ for (const viewport of [
   {
     const { page, errors } = await openRoute(browser, viewport, 'proof_detail');
     let text = await assertPageHealth(page, viewport.name, 'initial-proof-detail', errors);
-    if (!text.includes('Selected proof') || !text.includes('proof-route-evidence')) {
+    if (!text.toLowerCase().includes('selected proof') || !text.includes('proof-route-evidence')) {
       throw new Error(`${viewport.name}: proof detail route collapsed`);
     }
     await page.locator('.body button[data-action="refresh"]').click();
     await page.waitForTimeout(100);
     text = await assertPageHealth(page, viewport.name, 'proof-detail-refresh', errors);
-    if (!text.includes('Selected proof') || !text.includes('proof-route-evidence')) {
+    if (!text.toLowerCase().includes('selected proof') || !text.includes('proof-route-evidence')) {
       throw new Error(`${viewport.name}: proof detail mode was lost after refresh`);
     }
     const calls = await page.evaluate(() => window.__calls);
