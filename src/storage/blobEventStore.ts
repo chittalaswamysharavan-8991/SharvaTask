@@ -2,6 +2,12 @@ import { get, list, put } from '@vercel/blob';
 import type { SharvaTaskEvent } from '../types';
 
 const DEFAULT_PREFIX = 'sharvatask-v2/events';
+const ARCHIVED_LIST_BLOCKED_ACTIONS = new Set<SharvaTaskEvent['action']>([
+  'task_added',
+  'task_status_updated',
+  'task_updated',
+  'task_proof_added'
+]);
 
 function prefix(): string {
   return (process.env.SHARVATASK_BLOB_PREFIX || DEFAULT_PREFIX).replace(/^\/+|\/+$/g, '');
@@ -16,7 +22,19 @@ export function newId(prefixValue: string): string {
   return `${prefixValue}-${Date.now().toString(36)}-${randomPart}`.toUpperCase();
 }
 
+async function assertArchivedListIsImmutable(event: SharvaTaskEvent): Promise<void> {
+  if (!ARCHIVED_LIST_BLOCKED_ACTIONS.has(event.action)) return;
+  const existingEvents = await readAllEvents();
+  const archived = existingEvents.some(
+    (existing) => existing.list_id === event.list_id && existing.action === 'list_archived'
+  );
+  if (archived) {
+    throw new Error(`Archived SharvaTask list is immutable: ${event.list_id}`);
+  }
+}
+
 export async function writeEvent(event: SharvaTaskEvent): Promise<void> {
+  await assertArchivedListIsImmutable(event);
   const pathname = `${prefix()}/${safeTimestamp(new Date(event.event_time))}_${event.event_id}.json`;
   await put(pathname, JSON.stringify(event, null, 2), {
     access: 'private',
