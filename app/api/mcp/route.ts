@@ -78,6 +78,13 @@ const listSummarySchema = z.object({
   total_count: z.number()
 });
 
+const taskSearchResultSchema = z.object({
+  list_id: z.string(),
+  list_title: z.string(),
+  project: z.string(),
+  task: taskItemSchema
+});
+
 const historyEventSchema = z.object({
   event_id: z.string(),
   event_time: z.string(),
@@ -104,6 +111,8 @@ const structuredOutputShape = {
     'search_results',
     'history',
     'task_detail',
+    'proof_detail',
+    'archive_recovery',
     'ambiguity',
     'error'
   ]).optional(),
@@ -139,13 +148,17 @@ const structuredOutputShape = {
     candidates: z.array(ambiguityCandidateSchema)
   }).optional(),
   event: historyEventSchema.optional(),
-  view: z.enum(['list', 'lists', 'history', 'message']),
+  view: z.enum(['list', 'lists', 'search', 'history', 'task_detail', 'proof_detail', 'archive_recovery', 'ambiguity', 'error', 'message']),
   message: z.string(),
   list: listSchema.optional(),
   lists: z.array(listSummarySchema).optional(),
   events: z.array(historyEventSchema).optional(),
   query: z.string().optional(),
-  task: taskItemSchema.optional()
+  task: taskItemSchema.optional(),
+  task_results: z.array(taskSearchResultSchema).optional(),
+  focused_task_id: z.string().optional(),
+  proofs: z.array(z.string()).optional(),
+  selected_proof: z.string().optional()
 };
 
 const boardShellToolMeta = {
@@ -294,6 +307,7 @@ const handler = createMcpHandler(
           list_id: z.string().optional().describe('Stable list ID to open if known.'),
           list_query: z.string().optional().describe('List title, project, or query to resolve.'),
           task_id: z.string().optional().describe('Optional stable task ID to focus.'),
+          proof_index: z.number().int().min(0).optional().describe('Optional zero-based proof index for proof detail mode.'),
           search_query: z.string().optional().describe('Initial search query for search mode.'),
           include_archived: z.boolean().optional().describe('Whether archived lists can be resolved.'),
           restore_strategy: z.enum(['active_pointer', 'latest_business_mutation', 'explicit_only']).optional().describe('Fresh-chat restore strategy.')
