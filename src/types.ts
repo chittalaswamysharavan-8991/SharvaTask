@@ -11,7 +11,9 @@ export type SharvaTaskView =
   | 'proof_detail'
   | 'archive_recovery'
   | 'ambiguity_resolution'
-  | 'error_recovery';
+  | 'error_recovery'
+  | 'ambiguity'
+  | 'error';
 
 export type SharvaTaskResponseType =
   | 'board_snapshot'
@@ -107,6 +109,8 @@ export interface SharvaTaskSearchTaskMatch {
   task: SharvaTaskItem;
 }
 
+export type SharvaTaskTaskSearchResult = SharvaTaskSearchTaskMatch;
+
 export interface SharvaTaskProofDetail {
   proof_id?: string;
   content: string;
@@ -157,7 +161,10 @@ export interface SharvaTaskWidgetOutput {
   query?: string;
   task?: SharvaTaskItem;
   task_matches?: SharvaTaskSearchTaskMatch[];
+  task_results?: SharvaTaskTaskSearchResult[];
   focused_task_id?: string;
   focused_proof_id?: string;
   proof?: SharvaTaskProofDetail;
+  proofs?: string[];
+  selected_proof?: string;
 }
