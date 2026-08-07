@@ -718,23 +718,17 @@ export async function listAllSharvaListsData(args: {
 
 export async function searchBoardData(args: { query: string }): Promise<SharvaTaskWidgetOutput> {
   const { events, lists } = await getLists();
-  const needle = args.query.toLowerCase();
-  const summaries = lists
-    .filter((list) => {
-      return (
-        list.title.toLowerCase().includes(needle) ||
-        list.project.toLowerCase().includes(needle) ||
-        list.list_id.toLowerCase().includes(needle) ||
-        list.items.some((item) => item.title.toLowerCase().includes(needle) || item.notes?.toLowerCase().includes(needle))
-      );
-    })
-    .map(summarizeList);
+  const results = searchRouteTargets(lists, args.query, { includeArchived: false });
+  const total = results.lists.length + results.tasks.length;
 
   return withEnvelope(
     {
-      view: 'lists',
-      message: summaries.length ? `Found ${summaries.length} list(s) for: ${args.query}` : `No lists found for: ${args.query}`,
-      lists: summaries,
+      view: 'search',
+      message: total
+        ? `Found ${results.tasks.length} task(s) and ${results.lists.length} list(s) for: ${args.query}`
+        : `No tasks or lists found for: ${args.query}`,
+      lists: results.lists.map(summarizeList),
+      task_results: results.tasks,
       query: args.query
     },
     { events, lists, response_type: 'search_results', mode_recommendation: 'search' }
