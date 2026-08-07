@@ -1,0 +1,27 @@
+name: SharvaTask Live Production Tool Surface E2E
+on:
+  push:
+    branches: [qa/live-tool-surface-20260807]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tool-surface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run production tool-surface E2E
+        run: node scripts/live-tool-surface-e2e.mjs
+      - name: Upload surface evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-live-tool-surface-${{ github.run_id }}
+          path: artifacts/release-gate/live-tool-surface-e2e.json
+          retention-days: 30
