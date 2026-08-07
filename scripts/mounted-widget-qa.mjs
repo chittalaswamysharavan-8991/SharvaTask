@@ -297,7 +297,7 @@ for (const viewport of [
     if (!text.includes('Task detail') || !text.includes('Verify add task updates same widget')) {
       throw new Error(`${viewport.name}: initial task detail route collapsed`);
     }
-    await page.locator('button[data-action="refresh"]').click();
+    await page.locator('.body button[data-action="refresh"]').click();
     await page.waitForTimeout(100);
     text = await assertPageHealth(page, viewport.name, 'task-detail-refresh', errors);
     if (!text.includes('Task detail') || !text.includes('Verify add task updates same widget')) {
@@ -317,7 +317,7 @@ for (const viewport of [
     if (!text.includes('Selected proof') || !text.includes('proof-route-evidence')) {
       throw new Error(`${viewport.name}: proof detail route collapsed`);
     }
-    await page.locator('button[data-action="refresh"]').click();
+    await page.locator('.body button[data-action="refresh"]').click();
     await page.waitForTimeout(100);
     text = await assertPageHealth(page, viewport.name, 'proof-detail-refresh', errors);
     if (!text.includes('Selected proof') || !text.includes('proof-route-evidence')) {
