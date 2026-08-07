@@ -4,7 +4,7 @@ export async function GET() {
   return Response.json({
     ok: true,
     name: 'SharvaTask MCP',
-    version: '2.4.0-clean-ui',
+    version: '2.6.0-phase-f-edit-task-details',
     mcp_path: '/api/mcp',
     alias_mcp_path: '/mcp',
     widget: 'ui://widget/sharvatask-v2-4-clean.html',
