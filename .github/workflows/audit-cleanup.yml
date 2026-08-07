@@ -1,0 +1,27 @@
+name: SharvaTask Audit Cleanup
+on:
+  push:
+    branches: [qa/audit-cleanup-20260807]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Archive and verify disposable orphan
+        run: node scripts/archive-audit-orphan.mjs
+      - name: Upload cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-audit-cleanup-${{ github.run_id }}
+          path: artifacts/release-gate/audit-cleanup.json
+          retention-days: 30
