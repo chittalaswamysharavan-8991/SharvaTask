@@ -1,0 +1,57 @@
+name: SharvaTask Exact Main HEAD Gate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-main-head:
+    name: Exact main HEAD verification
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout exact event commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Prove exact event commit
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run complete verification suite
+        id: verification
+        run: npm run verify
+
+      - name: Write exact-HEAD evidence
+        if: always()
+        env:
+          VERIFY_OUTCOME: ${{ steps.verification.outcome }}
+        run: |
+          mkdir -p artifacts
+          printf '{"repository":"%s","ref":"%s","sha":"%s","run_id":"%s","verification":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_REF" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$VERIFY_OUTCOME" \
+            > artifacts/main-head-evidence.json
+
+      - name: Upload exact-HEAD evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharvatask-main-head-evidence-${{ github.run_id }}
+          path: artifacts/main-head-evidence.json
+          if-no-files-found: error
+          retention-days: 30
