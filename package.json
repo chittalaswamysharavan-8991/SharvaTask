@@ -8,10 +8,11 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/routing-intent.test.mjs tests/widget-phase-f.test.mjs",
+    "test": "node --test tests/foundation-contract.test.mjs tests/routing-intent.test.mjs tests/widget-phase-f.test.mjs",
     "verify:descriptor": "node scripts/verify-descriptor.mjs",
     "verify:phase-f": "node scripts/verify-phase-f.mjs",
-    "verify": "npm run verify:descriptor && npm run verify:phase-f && npm run typecheck && npm run build && npm run test"
+    "verify:foundation": "node scripts/verify-foundation.mjs",
+    "verify": "npm run verify:foundation && npm run verify:descriptor && npm run verify:phase-f && npm run typecheck && npm run build && npm run test"
   },
   "dependencies": {
     "@vercel/blob": "latest",

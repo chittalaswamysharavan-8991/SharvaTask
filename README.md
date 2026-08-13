@@ -2,6 +2,8 @@
 
 SharvaTask MCP is a Vercel-hosted MCP connector for ChatGPT that stores persistent list/task history in Vercel Blob and renders saved lists as an interactive ChatGPT widget.
 
+Within SharvaOS, this repository is the canonical owner of lists, tasks, and task history. SharvaOS-Pulse and sharvaos-app may provide focused views and capture flows, but they read and write through SharvaTask with authoritative read-back instead of maintaining competing task stores. See [the canonical ownership contract](docs/canonical-task-owner.md).
+
 V2.2 keeps the working V2.1 backend as-is and focuses on UI/UX polish.
 
 ## What V2.2 improves
@@ -57,6 +59,7 @@ SHARVATASK_BLOB_PREFIX=sharvatask-v2/events
 
 ```bash
 npm install
+npm run verify
 npm run build
 npm run dev
 ```

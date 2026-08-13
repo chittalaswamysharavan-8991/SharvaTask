@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "contract_id": "sharvaos.task-list-owner",
+  "repository": "chittalaswamysharavan-8991/SharvaTask",
+  "role": "canonical_task_list_owner",
+  "domains": [
+    "lists",
+    "tasks",
+    "task_history"
+  ],
+  "consumers": [
+    {
+      "repository": "chittalaswamysharavan-8991/SharvaOS-Pulse",
+      "responsibility": "daily_task_view",
+      "access": "read_write_through_sharvatask",
+      "authoritative_read_back_required": true
+    },
+    {
+      "repository": "chittalaswamysharavan-8991/sharvaos-app",
+      "responsibility": "universal_capture_client",
+      "access": "read_write_through_sharvatask",
+      "authoritative_read_back_required": true
+    }
+  ],
+  "interface": {
+    "transport": "mcp",
+    "primary_path": "/api/mcp",
+    "alias_path": "/mcp",
+    "mutation_tools": [
+      "create_list",
+      "add_task",
+      "update_task_status",
+      "edit_task_details",
+      "update_task",
+      "add_proof",
+      "archive_list"
+    ],
+    "read_tools": [
+      "open_task_board",
+      "get_board_snapshot",
+      "browse_lists",
+      "search_board",
+      "get_history",
+      "get_task_detail",
+      "refresh_board_state",
+      "show_list",
+      "list_all",
+      "search_lists",
+      "continue_list",
+      "show_history"
+    ]
+  },
+  "persistence": {
+    "provider": "vercel_blob",
+    "access": "private",
+    "model": "append_only_event_history",
+    "default_prefix": "sharvatask-v2/events",
+    "event_actions": [
+      "list_created",
+      "task_added",
+      "task_status_updated",
+      "task_updated",
+      "task_proof_added",
+      "list_archived"
+    ]
+  },
+  "ownership_policy": {
+    "competing_task_stores_allowed": false,
+    "consumer_repositories_are_views_or_clients": true
+  }
+}
