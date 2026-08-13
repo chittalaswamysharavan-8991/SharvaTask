@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const verifier = new URL('../scripts/verify-foundation.mjs', import.meta.url);
-const verifierPath = fileURLToPath(verifier);
+const verifierPath = fileURLToPath(new URL('../scripts/verify-foundation.mjs', import.meta.url));
+const canonicalWorkflow = readFileSync(new URL('../.github/workflows/main-head-gate.yml', import.meta.url), 'utf8');
+const fixtureRoots = new Set();
 
 const canonicalContract = {
   schema_version: 1,
@@ -49,8 +50,14 @@ const canonicalContract = {
   }
 };
 
+test.afterEach(() => {
+  for (const root of fixtureRoots) rmSync(root, { recursive: true, force: true });
+  fixtureRoots.clear();
+});
+
 function writeFixture(mutator = () => {}) {
   const root = mkdtempSync(join(tmpdir(), 'sharvatask-foundation-'));
+  fixtureRoots.add(root);
   for (const directory of ['contracts', '.github/workflows', 'app/api/mcp', 'src/storage', 'src']) {
     mkdirSync(join(root, directory), { recursive: true });
   }
@@ -60,42 +67,30 @@ function writeFixture(mutator = () => {}) {
     packageJson: {
       version: '2.4.0',
       scripts: {
-        test: 'node --test tests/foundation-contract.test.mjs',
+        test: 'node --test tests/foundation-contract.test.mjs tests/routing-intent.test.mjs tests/widget-phase-f.test.mjs',
         'verify:foundation': 'node scripts/verify-foundation.mjs',
-        verify: 'npm run verify:foundation && npm test'
+        'verify:descriptor': 'node scripts/verify-descriptor.mjs',
+        'verify:phase-f': 'node scripts/verify-phase-f.mjs',
+        typecheck: 'tsc --noEmit',
+        build: 'next build',
+        verify: 'npm run verify:foundation && npm run verify:descriptor && npm run verify:phase-f && npm run typecheck && npm run build && npm run test'
       }
     },
-    workflow: `name: SharvaTask Exact Main HEAD Gate
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-permissions:
-  contents: read
-jobs:
-  exact-main-head:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: \${{ github.sha }}
-      - name: Prove exact event commit
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-      - run: npm ci
-      - run: npm run verify
-      - name: Write exact-HEAD evidence
-        run: mkdir -p artifacts && printf '{"sha":"%s"}\n' "$GITHUB_SHA" > artifacts/main-head-evidence.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: sharvatask-main-head-evidence-\${{ github.run_id }}
-          path: artifacts/main-head-evidence.json
-`,
+    workflow: canonicalWorkflow,
     route: [...canonicalContract.interface.mutation_tools, ...canonicalContract.interface.read_tools]
       .map((name) => `server.registerTool('${name}', {}, async () => ({}));`)
       .join('\n'),
     types: `export type HistoryAction =\n${canonicalContract.persistence.event_actions.map((action) => `  | '${action}'`).join('\n')};\n`,
-    store: `const DEFAULT_PREFIX = 'sharvatask-v2/events';\nexport async function writeEvent(event) {\n  await put('event.json', JSON.stringify(event), { access: 'private', addRandomSuffix: false });\n}\n`,
+    store: `import { get, list, put } from '@vercel/blob';
+const DEFAULT_PREFIX = 'sharvatask-v2/events';
+export async function writeEvent(event) {
+  await put('event.json', JSON.stringify(event), {
+    access: 'private',
+    contentType: 'application/json',
+    addRandomSuffix: false
+  });
+}
+`,
     vercel: { rewrites: [{ source: '/mcp', destination: '/api/mcp' }] }
   };
 
@@ -114,6 +109,12 @@ function verify(root) {
   return spawnSync(process.execPath, [verifierPath, '--root', root], { encoding: 'utf8' });
 }
 
+function expectFailure(mutator, messagePattern) {
+  const result = verify(writeFixture(mutator));
+  assert.notEqual(result.status, 0, result.stdout);
+  assert.match(result.stderr, messagePattern);
+}
+
 test('accepts the canonical owner contract when interfaces, persistence, and exact-main-HEAD evidence agree', () => {
   const result = verify(writeFixture());
   assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -121,19 +122,75 @@ test('accepts the canonical owner contract when interfaces, persistence, and exa
 });
 
 test('rejects persistence drift before a Blob prefix change can silently split task history', () => {
-  const root = writeFixture((fixture) => {
+  expectFailure((fixture) => {
     fixture.contract.persistence.default_prefix = 'sharvatask-v3/events';
-  });
-  const result = verify(root);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /default_prefix.*sharvatask-v2\/events/i);
+  }, /default_prefix.*sharvatask-v2\/events/i);
 });
 
 test('rejects a main gate that stops running on pushes to main', () => {
-  const root = writeFixture((fixture) => {
-    fixture.workflow = fixture.workflow.replace('  push:\n    branches: [main]\n', '  pull_request:\n    branches: [main]\n');
-  });
-  const result = verify(root);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /pushes to main/i);
+  expectFailure((fixture) => {
+    fixture.workflow = fixture.workflow.replace('  push:\n    branches: [main]\n', '  # push:\n  #   branches: [main]\n');
+  }, /workflow\.on keys.*push/i);
+});
+
+test('rejects a commented github.sha reference when checkout uses main', () => {
+  expectFailure((fixture) => {
+    fixture.workflow = fixture.workflow.replace(
+      '          ref: ${{ github.sha }}',
+      '          ref: main\n          # ref: ${{ github.sha }}'
+    );
+  }, /checkout must pin the exact github\.sha/i);
+});
+
+test('rejects an echoed verification command', () => {
+  expectFailure((fixture) => {
+    fixture.workflow = fixture.workflow.replace('        run: npm run verify', '        run: echo npm run verify');
+  }, /execute the full npm run verify/i);
+});
+
+test('rejects an echoed package foundation command', () => {
+  expectFailure((fixture) => {
+    fixture.packageJson.scripts['verify:foundation'] = 'echo node scripts/verify-foundation.mjs';
+  }, /exact verify:foundation command/i);
+});
+
+test('rejects an echoed foundation call in the package verification chain', () => {
+  expectFailure((fixture) => {
+    fixture.packageJson.scripts.verify = 'echo npm run verify:foundation && npm run verify:descriptor && npm run verify:phase-f && npm run typecheck && npm run build && npm run test';
+  }, /exact audited verification chain/i);
+});
+
+test('rejects a commented tool registration', () => {
+  expectFailure((fixture) => {
+    fixture.route = fixture.route.replace("server.registerTool('create_list'", "// server.registerTool('create_list'");
+  }, /registered MCP tools drifted/i);
+});
+
+test('rejects an aliased Blob delete import and call', () => {
+  expectFailure((fixture) => {
+    fixture.store = fixture.store
+      .replace("import { get, list, put } from '@vercel/blob';", "import { del as remove, get, list, put } from '@vercel/blob';")
+      .replace('\n}', "\n  await remove('event.json');\n}");
+  }, /@vercel\/blob imports.*del/i);
+});
+
+test('rejects public Blob writes even when a private-access comment remains', () => {
+  expectFailure((fixture) => {
+    fixture.store = fixture.store.replace("    access: 'private',", "    access: 'public', // access: 'private'");
+  }, /event writes must remain private/i);
+});
+
+test('rejects cancellation of an earlier exact-main-HEAD run', () => {
+  expectFailure((fixture) => {
+    fixture.workflow = fixture.workflow.replace(
+      'permissions:\n',
+      'concurrency:\n  group: sharvatask-main-head-${{ github.ref }}\n  cancel-in-progress: true\npermissions:\n'
+    );
+  }, /must not cancel or supersede/i);
+});
+
+test('rejects workflow dispatch without a main-ref guard', () => {
+  expectFailure((fixture) => {
+    fixture.workflow = fixture.workflow.replace("    if: ${{ github.ref == 'refs/heads/main' }}\n", '');
+  }, /must reject non-main workflow dispatches/i);
 });

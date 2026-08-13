@@ -27,7 +27,8 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "yaml": "^2.8.1"
   },
   "engines": {
     "node": ">=20"

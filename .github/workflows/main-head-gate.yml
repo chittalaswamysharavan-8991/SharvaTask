@@ -5,16 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
-concurrency:
-  group: sharvatask-main-head-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
 jobs:
   exact-main-head:
     name: Exact main HEAD verification
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
