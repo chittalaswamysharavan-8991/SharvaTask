@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const REQUIRED_MUTATION_TOOLS = [
   'create_list',
@@ -132,7 +133,7 @@ function argument(name) {
 }
 
 try {
-  verifyFoundation(resolve(argument('--root') || new URL('..', import.meta.url).pathname));
+  verifyFoundation(resolve(argument('--root') || fileURLToPath(new URL('..', import.meta.url))));
   console.log('Canonical task/list owner foundation verified: ownership, MCP surface, Blob history, and exact-main-HEAD gate agree.');
 } catch (error) {
   console.error(`Foundation verification failed: ${error instanceof Error ? error.message : String(error)}`);

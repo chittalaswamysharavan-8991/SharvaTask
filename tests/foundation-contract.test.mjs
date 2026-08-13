@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 const verifier = new URL('../scripts/verify-foundation.mjs', import.meta.url);
+const verifierPath = fileURLToPath(verifier);
 
 const canonicalContract = {
   schema_version: 1,
@@ -109,7 +111,7 @@ jobs:
 }
 
 function verify(root) {
-  return spawnSync(process.execPath, [verifier.pathname, '--root', root], { encoding: 'utf8' });
+  return spawnSync(process.execPath, [verifierPath, '--root', root], { encoding: 'utf8' });
 }
 
 test('accepts the canonical owner contract when interfaces, persistence, and exact-main-HEAD evidence agree', () => {
