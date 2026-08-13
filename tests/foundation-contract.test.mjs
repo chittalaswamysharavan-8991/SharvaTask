@@ -7,7 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const verifierPath = fileURLToPath(new URL('../scripts/verify-foundation.mjs', import.meta.url));
-const canonicalWorkflow = readFileSync(new URL('../.github/workflows/main-head-gate.yml', import.meta.url), 'utf8');
+const canonicalWorkflow = readFileSync(new URL('../.github/workflows/main-head-gate.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const fixtureRoots = new Set();
 
 const canonicalContract = {
@@ -115,6 +115,12 @@ function expectFailure(mutator, messagePattern) {
   assert.match(result.stderr, messagePattern);
 }
 
+function replaceWorkflow(fixture, before, after) {
+  const mutated = fixture.workflow.replace(before, after);
+  assert.notEqual(mutated, fixture.workflow, 'workflow test mutation must change the canonical fixture');
+  fixture.workflow = mutated;
+}
+
 test('accepts the canonical owner contract when interfaces, persistence, and exact-main-HEAD evidence agree', () => {
   const result = verify(writeFixture());
   assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -129,13 +135,14 @@ test('rejects persistence drift before a Blob prefix change can silently split t
 
 test('rejects a main gate that stops running on pushes to main', () => {
   expectFailure((fixture) => {
-    fixture.workflow = fixture.workflow.replace('  push:\n    branches: [main]\n', '  # push:\n  #   branches: [main]\n');
+    replaceWorkflow(fixture, '  push:\n    branches: [main]\n', '  # push:\n  #   branches: [main]\n');
   }, /workflow\.on keys.*push/i);
 });
 
 test('rejects a commented github.sha reference when checkout uses main', () => {
   expectFailure((fixture) => {
-    fixture.workflow = fixture.workflow.replace(
+    replaceWorkflow(
+      fixture,
       '          ref: ${{ github.sha }}',
       '          ref: main\n          # ref: ${{ github.sha }}'
     );
@@ -144,7 +151,7 @@ test('rejects a commented github.sha reference when checkout uses main', () => {
 
 test('rejects an echoed verification command', () => {
   expectFailure((fixture) => {
-    fixture.workflow = fixture.workflow.replace('        run: npm run verify', '        run: echo npm run verify');
+    replaceWorkflow(fixture, '        run: npm run verify', '        run: echo npm run verify');
   }, /execute the full npm run verify/i);
 });
 
@@ -182,7 +189,8 @@ test('rejects public Blob writes even when a private-access comment remains', ()
 
 test('rejects cancellation of an earlier exact-main-HEAD run', () => {
   expectFailure((fixture) => {
-    fixture.workflow = fixture.workflow.replace(
+    replaceWorkflow(
+      fixture,
       'permissions:\n',
       'concurrency:\n  group: sharvatask-main-head-${{ github.ref }}\n  cancel-in-progress: true\npermissions:\n'
     );
@@ -191,6 +199,6 @@ test('rejects cancellation of an earlier exact-main-HEAD run', () => {
 
 test('rejects workflow dispatch without a main-ref guard', () => {
   expectFailure((fixture) => {
-    fixture.workflow = fixture.workflow.replace("    if: ${{ github.ref == 'refs/heads/main' }}\n", '');
+    replaceWorkflow(fixture, "    if: ${{ github.ref == 'refs/heads/main' }}\n", '');
   }, /must reject non-main workflow dispatches/i);
 });
