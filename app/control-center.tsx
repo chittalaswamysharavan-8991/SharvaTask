@@ -107,7 +107,7 @@ function eventLabel(event: SharvaTaskEvent) {
 
 function taskFromEvent(event: SharvaTaskEvent) {
   const payload = event.payload || {};
-  return String(payload.title || payload.task_title || payload.item_id || 'SharvaTask update');
+  return String(payload.title || payload.task_title || payload.item_id || 'TaskState MCP update');
 }
 
 function emptyDraft(task: SharvaTaskItem): EditDraft {
@@ -134,7 +134,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
   const [quickPriority, setQuickPriority] = useState<Priority>('P0');
   const [showNewList, setShowNewList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
-  const [newListProject, setNewListProject] = useState('SharvaOS');
+  const [newListProject, setNewListProject] = useState('Operations');
   const [proofText, setProofText] = useState('');
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -189,7 +189,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
       const suffix = listId ? `?list_id=${encodeURIComponent(listId)}` : '';
       const response = await fetch(`/api/control-center${suffix}`, { cache: 'no-store' });
       const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.message || 'Unable to refresh SharvaTask.');
+      if (!response.ok || !data.ok) throw new Error(data.message || 'Unable to refresh TaskState MCP.');
       setState(data);
       setSelectedTaskId('');
       setNotice('Control center refreshed.');
@@ -300,7 +300,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
     if (!list || list.status === 'archived') return;
     if (!window.confirm(`Archive “${list.title}”? The history remains preserved.`)) return;
     try {
-      await mutate({ action: 'archive_list', list_id: list.list_id, reason: 'Archived from SharvaTask Control Center' }, 'List archived.');
+      await mutate({ action: 'archive_list', list_id: list.list_id, reason: 'Archived from TaskState MCP Control Center' }, 'List archived.');
     } catch {}
   }
 
@@ -317,9 +317,9 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
     <main className="control-shell">
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-row">
-          <div className="brand-mark">S</div>
+          <div className="brand-mark">T</div>
           <div>
-            <div className="brand-name">SharvaTask</div>
+            <div className="brand-name">TaskState MCP</div>
             <div className="brand-subtitle">Control Center</div>
           </div>
           <button className="icon-button mobile-only" onClick={() => setSidebarOpen(false)} aria-label="Close navigation">×</button>
@@ -337,7 +337,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
           </form>
         )}
 
-        <nav className="list-nav" aria-label="SharvaTask lists">
+        <nav className="list-nav" aria-label="TaskState MCP lists">
           <div className="nav-heading">Active lists</div>
           {activeLists.length === 0 && <p className="nav-empty">No active lists</p>}
           {activeLists.map((item) => (
@@ -392,7 +392,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
         <div className="workspace-body">
           {!state.ok && (
             <section className="error-state">
-              <h2>SharvaTask could not load</h2>
+              <h2>TaskState MCP could not load</h2>
               <p>{state.message}</p>
               <button className="primary-button" onClick={() => reload()} disabled={busy}>Try again</button>
             </section>
@@ -401,7 +401,7 @@ export function ControlCenter({ initialState }: { initialState: ControlCenterSta
           {state.ok && !list && (
             <section className="empty-state-large">
               <div className="empty-icon"><Icon name="list" /></div>
-              <h2>Create your first SharvaTask list</h2>
+              <h2>Create your first TaskState MCP list</h2>
               <p>The control center will use the same MCP service and Vercel Blob event history.</p>
               <button className="primary-button" onClick={() => setShowNewList(true)}>Create list</button>
             </section>
