@@ -168,8 +168,8 @@ const boardShellToolMeta = {
   },
   'openai/outputTemplate': SHARVATASK_WIDGET_URI,
   'openai/widgetAccessible': true,
-  'openai/toolInvocation/invoking': 'Opening SharvaTask board…',
-  'openai/toolInvocation/invoked': 'SharvaTask board ready'
+  'openai/toolInvocation/invoking': 'Opening TaskState MCP board…',
+  'openai/toolInvocation/invoked': 'TaskState MCP board ready'
 };
 
 const mutationDataToolMeta = {
@@ -177,8 +177,8 @@ const mutationDataToolMeta = {
     visibility: ['model', 'app']
   },
   'openai/widgetAccessible': true,
-  'openai/toolInvocation/invoking': 'Updating SharvaTask state…',
-  'openai/toolInvocation/invoked': 'SharvaTask state ready'
+  'openai/toolInvocation/invoking': 'Updating TaskState MCP state…',
+  'openai/toolInvocation/invoked': 'TaskState MCP state ready'
 };
 
 const internalDataToolMeta = {
@@ -186,14 +186,14 @@ const internalDataToolMeta = {
     visibility: ['app']
   },
   'openai/widgetAccessible': true,
-  'openai/toolInvocation/invoking': 'Loading SharvaTask state…',
-  'openai/toolInvocation/invoked': 'SharvaTask state loaded'
+  'openai/toolInvocation/invoking': 'Loading TaskState MCP state…',
+  'openai/toolInvocation/invoked': 'TaskState MCP state loaded'
 };
 
 function widgetResult(result: SharvaTaskWidgetOutput) {
   return {
     structuredContent: result as unknown as Record<string, unknown>,
-    content: [{ type: 'text' as const, text: result.message || 'SharvaTask state ready' }]
+    content: [{ type: 'text' as const, text: result.message || 'TaskState MCP state ready' }]
   };
 }
 
@@ -203,8 +203,8 @@ const handler = createMcpHandler(
       'sharvatask_widget',
       SHARVATASK_WIDGET_URI,
       {
-        title: 'SharvaTask board shell',
-        description: 'Single SharvaTask board shell with internal modes for board, lists, search, history, task detail, archive, ambiguity, and recovery.',
+        title: 'TaskState MCP board shell',
+        description: 'Single TaskState MCP work-state shell with modes for board, lists, search, history, task detail, archive, ambiguity, and recovery.',
         mimeType: 'text/html',
         _meta: {
           ui: {
@@ -214,7 +214,7 @@ const handler = createMcpHandler(
               resourceDomains: []
             }
           },
-          'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+          'openai/widgetDescription': 'Live TaskState MCP work-state shell for persistent lists, tasks, search, history, proof, archive, and recovery.',
           'openai/widgetPrefersBorder': true,
           'openai/widgetCSP': {
             connect_domains: [],
@@ -236,7 +236,7 @@ const handler = createMcpHandler(
                   resourceDomains: []
                 }
               },
-              'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+              'openai/widgetDescription': 'Live TaskState MCP work-state shell for persistent lists, tasks, search, history, proof, archive, and recovery.',
               'openai/widgetPrefersBorder': true,
               'openai/widgetCSP': {
                 connect_domains: [],
@@ -252,8 +252,8 @@ const handler = createMcpHandler(
       'sharvatask_widget_legacy',
       'ui://widget/sharvatask-v2-4-clickdiag.html',
       {
-        title: 'SharvaTask board shell',
-        description: 'Single SharvaTask board shell with internal modes for board, lists, search, history, task detail, archive, ambiguity, and recovery.',
+        title: 'TaskState MCP board shell',
+        description: 'Legacy-compatible TaskState MCP work-state shell with board, lists, search, history, task detail, archive, ambiguity, and recovery modes.',
         mimeType: 'text/html',
         _meta: {
           ui: {
@@ -263,7 +263,7 @@ const handler = createMcpHandler(
               resourceDomains: []
             }
           },
-          'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+          'openai/widgetDescription': 'Legacy-compatible TaskState MCP work-state shell backed by the same durable state.',
           'openai/widgetPrefersBorder': true,
           'openai/widgetCSP': {
             connect_domains: [],
@@ -285,7 +285,7 @@ const handler = createMcpHandler(
                   resourceDomains: []
                 }
               },
-              'openai/widgetDescription': 'Single live SharvaTask board shell. It updates from structured backend state and keeps lists, search, history, details, archive, and recovery inside one widget.',
+              'openai/widgetDescription': 'Legacy-compatible TaskState MCP work-state shell backed by the same durable state.',
               'openai/widgetPrefersBorder': true,
               'openai/widgetCSP': {
                 connect_domains: [],
@@ -300,8 +300,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'open_task_board',
       {
-        title: 'Open SharvaTask board',
-        description: 'Opens the single SharvaTask board shell. Use this to mount SharvaTask once for board, lists, search, history, proof/detail, archive, recovery, ambiguity, error, or fresh-chat restore views. This is the only widget-opening tool and it does not create lists or write business history.',
+        title: 'Open TaskState MCP board',
+        description: 'Opens the TaskState MCP work-state shell for persistent boards, lists, search, history, proof/detail, archive, recovery, ambiguity, error, or fresh-chat restore views. This is the only widget-opening tool and it does not create lists or write business history.',
         inputSchema: {
           initial_mode: initialMode.optional().describe('Initial internal board-shell mode.'),
           list_id: z.string().optional().describe('Stable list ID to open if known.'),
@@ -322,11 +322,11 @@ const handler = createMcpHandler(
     server.registerTool(
       'create_list',
       {
-        title: 'Create SharvaTask list',
-        description: 'Creates a SharvaTask list only after duplicate checks and returns structured create/existing/candidate state for the existing board shell. Does not render, open, mount, or re-render a widget.',
+        title: 'Create TaskState MCP list',
+        description: 'Creates a persistent TaskState MCP list only after duplicate checks and returns structured create/existing/candidate state for the existing board shell. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           title: z.string().min(1).describe('List title'),
-          project: z.string().optional().describe('Project name, for example SharvaOS, AI Video, Daily Logs')
+          project: z.string().optional().describe('Project name, for example Operations, Support, or Client Delivery')
         },
         outputSchema: structuredOutputShape,
         _meta: mutationDataToolMeta
@@ -337,8 +337,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'add_task',
       {
-        title: 'Add SharvaTask task',
-        description: 'Adds a task to a resolved SharvaTask list and returns a structured mutation result plus backend-confirmed board snapshot. Does not render, open, mount, or re-render a widget. Prefer stable list IDs.',
+        title: 'Add TaskState MCP task',
+        description: 'Adds a task to a resolved TaskState MCP list and returns a structured mutation result plus backend-confirmed board snapshot. Does not render, open, mount, or re-render a widget. Prefer stable list IDs.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
           title: z.string().min(1).describe('Task title'),
@@ -354,7 +354,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'update_task_status',
       {
-        title: 'Update SharvaTask task status',
+        title: 'Update TaskState MCP task status',
         description: 'Updates a task status by stable task ID when possible and returns a structured mutation result plus board snapshot. If title/query is ambiguous, returns structured candidates instead of guessing. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
@@ -371,7 +371,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'edit_task_details',
       {
-        title: 'Edit SharvaTask task details',
+        title: 'Edit TaskState MCP task details',
         description: 'Updates editable task details such as title, notes, next action, Pablo instruction, priority, or status and returns structured data for the existing board shell. Does not render, open, mount, or re-render a widget. Prefer stable task IDs. If title/query is ambiguous, returns structured candidates instead of guessing.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
@@ -392,8 +392,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'update_task',
       {
-        title: 'Edit SharvaTask task (internal)',
-        description: 'Internal/app-only compatibility edit action for the mounted SharvaTask board shell. Routes to the same backend path as edit_task_details and returns structured state. Does not render, open, mount, or re-render a widget.',
+        title: 'Edit TaskState MCP task (internal)',
+        description: 'Internal/app-only compatibility edit action for the mounted TaskState MCP board shell. Routes to the same backend path as edit_task_details and returns structured state. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
           item_id_or_title: z.string().min(1).describe('Task ID or task title search text'),
@@ -413,7 +413,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'add_proof',
       {
-        title: 'Add SharvaTask proof',
+        title: 'Add TaskState MCP proof',
         description: 'Attaches proof to a stable task and returns structured proof result plus board/proof-detail state. Does not show, render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
@@ -429,7 +429,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'archive_list',
       {
-        title: 'Archive SharvaTask list',
+        title: 'Archive TaskState MCP list',
         description: 'Archives a list, preserves business history, and returns structured archive recovery/browser state. Requires confirmation in UX. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().min(1).describe('List ID, title, or project'),
@@ -445,8 +445,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'get_board_snapshot',
       {
-        title: 'Get SharvaTask board snapshot',
-        description: 'App/internal data tool for the mounted SharvaTask board shell. Returns a canonical board snapshot for a resolved list/context. Does not render, open, mount, or re-render a widget. Does not write business history.',
+        title: 'Get TaskState MCP board snapshot',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell. Returns a canonical board snapshot for a resolved list/context. Does not render, open, mount, or re-render a widget. Does not write business history.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
           include_archived: z.boolean().optional().describe('Whether archived lists can be resolved.')
@@ -461,8 +461,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'browse_lists',
       {
-        title: 'Browse SharvaTask lists',
-        description: 'App/internal data tool for the mounted SharvaTask board shell List Browser mode. Returns active/archived list summaries. Does not render, open, mount, or re-render a widget. Does not write business history.',
+        title: 'Browse TaskState MCP lists',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell List Browser mode. Returns active/archived list summaries. Does not render, open, mount, or re-render a widget. Does not write business history.',
         inputSchema: {
           project: z.string().optional().describe('Optional project filter'),
           status: z.enum(['active', 'archived', 'all']).optional().describe('List status filter')
@@ -477,8 +477,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'search_board',
       {
-        title: 'Search SharvaTask board',
-        description: 'App/internal data tool for the mounted SharvaTask board shell Search mode. Returns grouped search results across lists, tasks, notes, and history. Does not render, open, mount, or re-render a widget. Does not write business history.',
+        title: 'Search TaskState MCP board',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell Search mode. Returns grouped search results across lists, tasks, notes, and history. Does not render, open, mount, or re-render a widget. Does not write business history.',
         inputSchema: {
           query: z.string().min(1).describe('Search keyword')
         },
@@ -492,8 +492,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'get_history',
       {
-        title: 'Get SharvaTask history',
-        description: 'App/internal data tool for the mounted SharvaTask board shell History mode. Returns business history entries only. Does not render, open, mount, or re-render a widget. Does not create view-history events.',
+        title: 'Get TaskState MCP history',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell History mode. Returns business history entries only. Does not render, open, mount, or re-render a widget. Does not create view-history events.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.')
         },
@@ -507,8 +507,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'get_task_detail',
       {
-        title: 'Get SharvaTask task detail',
-        description: 'App/internal data tool for the mounted SharvaTask board shell detail/proof mode. Returns task, proof, and related event detail. Does not render, open, mount, or re-render a widget.',
+        title: 'Get TaskState MCP task detail',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell detail/proof mode. Returns task, proof, and related event detail. Does not render, open, mount, or re-render a widget.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.'),
           item_id_or_title: z.string().min(1).describe('Task ID or task title search text')
@@ -523,8 +523,8 @@ const handler = createMcpHandler(
     server.registerTool(
       'refresh_board_state',
       {
-        title: 'Refresh SharvaTask board state',
-        description: 'App/internal data tool for the mounted SharvaTask board shell. Returns latest backend-confirmed state for the current shell context. Does not render, open, mount, or re-render a widget. Does not write refresh events to business history.',
+        title: 'Refresh TaskState MCP board state',
+        description: 'App/internal data tool for the mounted TaskState MCP board shell. Returns latest backend-confirmed state for the current shell context. Does not render, open, mount, or re-render a widget. Does not write refresh events to business history.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.')
         },
@@ -538,7 +538,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'show_list',
       {
-        title: 'Show SharvaTask list (compatibility)',
+        title: 'Show TaskState MCP list (compatibility)',
         description: 'Compatibility alias for the mounted board shell. Prefer open_task_board for user-facing display or get_board_snapshot for app data. No output template and no widget mount.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to show latest active list.')
@@ -553,7 +553,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'list_all',
       {
-        title: 'List all SharvaTask lists (compatibility)',
+        title: 'List all TaskState MCP lists (compatibility)',
         description: 'Compatibility alias for the mounted board shell List Browser mode. Prefer open_task_board(initial_mode=list_browser) for model intent or browse_lists for app data. No output template and no widget mount.',
         inputSchema: {
           project: z.string().optional().describe('Optional project filter'),
@@ -569,7 +569,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'search_lists',
       {
-        title: 'Search SharvaTask lists (compatibility)',
+        title: 'Search TaskState MCP lists (compatibility)',
         description: 'Compatibility alias for the mounted board shell Search mode. Prefer open_task_board(initial_mode=search) for model intent or search_board for app data. No output template and no widget mount.',
         inputSchema: {
           query: z.string().min(1).describe('Search keyword')
@@ -584,7 +584,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'continue_list',
       {
-        title: 'Continue SharvaTask list (compatibility)',
+        title: 'Continue TaskState MCP list (compatibility)',
         description: 'Compatibility alias for restore/continue behavior inside the mounted board shell. Prefer open_task_board(initial_mode=board, restore_strategy=active_pointer). No output template and no widget mount.',
         inputSchema: {
           project_or_query: z.string().optional().describe('Optional project, title, or keyword')
@@ -599,7 +599,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'show_history',
       {
-        title: 'Show SharvaTask history (compatibility)',
+        title: 'Show TaskState MCP history (compatibility)',
         description: 'Compatibility alias for History mode inside the mounted board shell. Prefer open_task_board(initial_mode=history) for model intent or get_history for app data. No output template and no widget mount.',
         inputSchema: {
           list_id_or_query: z.string().optional().describe('List ID, title, or project. Omit to use latest active list.')
@@ -613,7 +613,7 @@ const handler = createMcpHandler(
   },
   {
     serverInfo: {
-      name: 'SharvaTask MCP',
+      name: 'TaskState MCP',
       version: '2.6.0-phase-f-edit-task-details'
     }
   },

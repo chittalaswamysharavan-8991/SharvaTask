@@ -18,6 +18,7 @@
     ["Editing locally. Save when ready.", "Editing. Save when ready."],
     ["Synced from backend ✅", "Updated ✅"],
     ["No SharvaTask data received yet.", "Open a task list to get started."],
-    ["SharvaTask state ready.", "Ready."]
+    ["SharvaTask state ready.", "Ready."],
+    ["SharvaTask", "TaskState MCP"]
   ]
 }
