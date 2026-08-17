@@ -30,10 +30,10 @@ export function ControlCenterGate() {
   return (
     <main className="gate-shell">
       <section className="gate-card">
-        <div className="gate-mark">S</div>
+        <div className="gate-mark">T</div>
         <div className="gate-copy">
-          <h1>SharvaTask Control Center</h1>
-          <p>Your canonical lists, tasks, proof, and history are protected. Enter the private access key to continue.</p>
+          <h1>TaskState MCP Control Center</h1>
+          <p>Your persistent lists, tasks, proof, and work history are protected. Enter the private access key to continue.</p>
         </div>
         <form onSubmit={unlock}>
           <label>
